@@ -22,7 +22,7 @@ package_path = "./"
 
 UPLOAD_FOLDER_PATH = join(package_path, "temp/")
 
-BASE_DOMAIN = "http://127.0.0.1:5000"
+BASE_DOMAIN = "http://172.16.35.149:5000"
 
 
 # *******************************************
@@ -228,13 +228,16 @@ def get_audio_animation():
     audio_animations = []
     for weight in sound_animation.yield_output_data():
         audio_animations.append(weight)
+        # print(f"weight: {weight}")
     return audio_animations
 
 
 def get_answer_data(recv_dict):
     answer_data = {}
-    audio_url = join(UPLOAD_FOLDER_PATH, "test.wav")
-    face_url = join(UPLOAD_FOLDER_PATH, "test.txt")
+    audio_name = "test.wav"
+    face_name = "test.txt"
+    audio_url = f"{BASE_DOMAIN}/get_file/{audio_name}"
+    face_url = f"{BASE_DOMAIN}/get_file/{face_name}"
     text = recv_dict["text"]["content"]
     dm_tts = aispeech.dm_tts(url=BA_URL, text=text, speaker=SPEAKER)
     if dm_tts.status_code == 200:
@@ -257,7 +260,7 @@ def get_answer_data(recv_dict):
 
             face_name = f"{uuid.uuid4().hex}.txt"
             face_path = join(UPLOAD_FOLDER_PATH, face_name)
-            np.savetxt(face_path, audio_animation, delimiter=",")
+            np.savetxt(face_path, audio_animation, fmt="%.19e", delimiter=",")
             face_url = f"{BASE_DOMAIN}/get_file/{face_name}"
 
     answer_data["answer"] = {"input": text, "output": "您好！我是心心，请问有什么可以帮助到您。"}
@@ -309,6 +312,7 @@ async def handler(websocket):
             await text_handler(websocket)
         else:
             await answer_handler(websocket)
+        print(f"message: {message}")
 
 
 async def main():

@@ -208,6 +208,7 @@ const_bs_value = [
 # the sort of bs name correspond to UE input sort
 bs_name_index = [
     0,
+    1,
     2,
     3,
     4,
@@ -321,7 +322,6 @@ bs_name_index = [
     112,
     113,
     114,
-    1,
     115,
 ]
 
