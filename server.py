@@ -271,7 +271,9 @@ def get_answer_data(recv_dict):
 
 
 async def answer_handler(websocket):
+    print("Enter answer_handler ...")
     recv_str = await websocket.recv()
+    print(f"recv_str: {recv_str}")
     recv_dict = json.loads(recv_str)
     print(f"<<< {recv_dict}")
     recv_type = recv_dict["type"]
@@ -321,8 +323,10 @@ async def main():
 
 
 if __name__ == "__main__":
+    print("Enter main....")
     aispeech = AiSpeech(productId, publicKey, secretkey, productIdChat=productIdChat)
     aispeech.update_token()
     sound_animation = SoundAnimation(CPU_Thread, CPU_Frames)
     sound_animation.start_multiprocessing()
+    print("aispeech and sound_animation ok ...")
     asyncio.run(main())
