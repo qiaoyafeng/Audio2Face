@@ -45,10 +45,16 @@ python server.py
 ```
 
 
-
-## 启动 下载面部数据和音频文件HTTP服务
+## Flask方式启动 下载面部数据和音频文件HTTP服务
 
 ```shell
 flask run --host=0.0.0.0
 ```
 
+
+## FastAPI方式启动HTTP服务
+
+```shell
+uvicorn main:app --reload --host=0.0.0.0
+```
+````

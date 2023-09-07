@@ -17,13 +17,11 @@ from constants import (
     bs_name_index,
 )
 
-
 package_path = "./"
 
 UPLOAD_FOLDER_PATH = join(package_path, "temp/")
 
-BASE_DOMAIN = "http://172.16.35.149:5000"
-
+BASE_DOMAIN = "http://172.16.35.149:8000"
 
 # *******************************************
 # load config file
@@ -36,7 +34,6 @@ except Exception as err:
     print("Read file failed,", path_config, ".Error is :", err)
     os.system("pause")
     # exit(1)
-
 
 # *******************************************
 # read parsing config data
@@ -55,12 +52,10 @@ ID_SESSION = ServiceConfig["config"]["session"]
 FPS = ServiceConfig["config"]["fps"]
 SPEED_PLAY = float(1.0 / FPS)
 
-
 # pbfile_path = join(package_path, 'zsmeif.pb')
 
 CPU_Thread = ServiceConfig["config"]["tensorflow"]["cpu"]
 CPU_Frames = ServiceConfig["config"]["tensorflow"]["frames"]
-
 
 # *******************************************
 # *******************************************
@@ -75,10 +70,14 @@ CLIENT_ADDR = (
     ServiceConfig["config"]["client"]["port"],
 )
 
+# 0-******************** websockets***********
+CONNECTIONS = set()
+
+# 1-*******************************************
+
 
 from lib.aispeech.api_aispeech import AiSpeech
 from lib.aispeech.api_websocket import AiSpeechWebSocket
-
 
 ANSWER_DATA = {
     "code": 0,
@@ -110,7 +109,6 @@ class Answer:
 # *******************************************
 # *******************************************
 import numpy as np
-
 
 from lib.tensorflow.input_wavdata_output_lpc import c_lpc, get_audio_frames
 from lib.tensorflow.input_lpc_output_weight import WeightsAnimation
@@ -267,6 +265,7 @@ def get_answer_data(recv_dict):
     answer_data["tts"] = {"audio_url": audio_url}
     answer_data["face"] = {"url": face_url}
     answer_data["motion"] = {"url": ""}
+    answer_data["background"] = {"url": ""}
     return answer_data
 
 
@@ -306,7 +305,43 @@ async def text_handler(websocket):
     print(f">>> {request_body}")
 
 
+def send_message_to_client(message):
+    """
+    发送消息给所有客户端
+    :param message:
+    :return:
+    """
+    websockets.broadcast(CONNECTIONS, message)
+
+
+def create_video_message(text: str, background_name: str):
+    """
+    根据用户上传的文本内容和背景图片生成对应的消息
+
+    """
+    answer_data = {}
+
+    audio_name = "39ca506ed50043a7a42db1a52b1c3c20.wav"
+    face_name = "dafc1e4e81334ce8862bdc6f4724c497.txt"
+
+    audio_url = f"{BASE_DOMAIN}/get_file/{audio_name}"
+    face_url = f"{BASE_DOMAIN}/get_file/{face_name}"
+    background_url = f"{BASE_DOMAIN}/get_file/{background_name}"
+
+    answer_data["answer"] = {"input": "notification", "output": text}
+    answer_data["tts"] = {"audio_url": audio_url}
+    answer_data["face"] = {"url": face_url}
+    answer_data["motion"] = {"url": ""}
+    answer_data["background"] = {"url": background_url}
+    message = {"code": 0, "msg": "ok", "data": answer_data}
+
+    message = json.dumps(message)
+
+    return message
+
+
 async def handler(websocket):
+    CONNECTIONS.add(websocket)
     async for message in websocket:
         if websocket.path == "/asr":
             await asr_handler(websocket)
@@ -315,6 +350,11 @@ async def handler(websocket):
         else:
             await answer_handler(websocket)
         print(f"message: {message}")
+
+    try:
+        await websocket.wait_closed()
+    finally:
+        CONNECTIONS.remove(websocket)
 
 
 async def main():
