@@ -142,7 +142,8 @@ def get_video_list(request: Request):
     video_files = [file for file in os.listdir(VIDEO_FOLDER_PATH)]
     video_files.sort(key=lambda x: os.path.getmtime(os.path.join(VIDEO_FOLDER_PATH, x)))
 
-    last_videos = video_files[-3:]
+    # last_videos = video_files[-3:]  # 显示最新三个视频
+    last_videos = video_files[-1:]  # 改为显示最新一个视频
     last_videos.sort(reverse=True)
     for last_video in last_videos:
         video_url = f"{BASE_DOMAIN}/video/{last_video}"

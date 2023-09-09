@@ -57,3 +57,10 @@ flask run --host=0.0.0.0
 ```shell
 uvicorn main:app --reload --host=0.0.0.0
 ```
+
+## 在服务器运行
+
+```
+nohup uvicorn main:app --reload --host=0.0.0.0 --port=32103 > uvicorn.log 2>&1 &
+
+```
