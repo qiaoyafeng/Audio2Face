@@ -17,6 +17,10 @@ from constants import (
     bs_name_index,
 )
 
+from fastapi import FastAPI, File, UploadFile, Form, WebSocket
+
+
+
 package_path = "./"
 
 UPLOAD_FOLDER_PATH = join(package_path, "temp/")
@@ -44,6 +48,7 @@ productIdChat = ServiceConfig["api_key"]["productIdChat"]
 SPEAKER = ServiceConfig["api_key"]["speaker"]
 
 BA_URL = ServiceConfig["api_ba"]["url"]
+TTS_URL = ServiceConfig["api_tts"]["url"]
 WSURL = ServiceConfig["api_websocket"]["url"] + productId + "&token="
 request_body_json = json.dumps(ServiceConfig["api_websocket"]["request_body_first"])
 
@@ -149,6 +154,9 @@ def worker(q_input, q_output, i):
         cnt += 1
 
 
+
+
+
 # *******************************************
 import threading
 from queue import Queue
@@ -222,6 +230,13 @@ class SoundAnimation:
                 num += 1
 
 
+aispeech = AiSpeech(productId, publicKey, secretkey, productIdChat=productIdChat)
+aispeech.update_token()
+sound_animation = SoundAnimation(CPU_Thread, CPU_Frames)
+sound_animation.start_multiprocessing()
+print("aispeech and sound_animation ok ...")
+
+
 def get_audio_animation():
     audio_animations = []
     for weight in sound_animation.yield_output_data():
@@ -269,9 +284,10 @@ def get_answer_data(recv_dict):
     return answer_data
 
 
-async def answer_handler(websocket):
-    print("Enter answer_handler ...")
-    recv_str = await websocket.recv()
+async def answer_handler(websocket: WebSocket):
+    CONNECTIONS.add(websocket)
+    print(f"Enter answer_handler ...{CONNECTIONS}")
+    recv_str = await websocket.receive_text()
     print(f"recv_str: {recv_str}")
     recv_dict = json.loads(recv_str)
     print(f"<<< {recv_dict}")
@@ -283,7 +299,8 @@ async def answer_handler(websocket):
     resp_body = {"code": 0, "msg": "ok", "data": answer_data}
 
     resp_body = json.dumps(resp_body)
-    await websocket.send(resp_body)
+    print(f"resp_body: {resp_body}")
+    await websocket.send_text(resp_body)
     print(f">>> {resp_body}")
 
 
@@ -305,14 +322,55 @@ async def text_handler(websocket):
     print(f">>> {request_body}")
 
 
-def send_message_to_client(message):
+async def send_message_to_client(message):
     """
     发送消息给所有客户端
     :param message:
     :return:
     """
     print(f"send  {message} to {CONNECTIONS}")
-    websockets.broadcast(CONNECTIONS, message)
+    if CONNECTIONS:
+        await list(CONNECTIONS)[0].send_text(message)
+
+
+def get_face_from_audio(b_wav_data):
+    """
+    根据语音获取面部数据
+
+    """
+    voice = np.frombuffer(b_wav_data[44:], dtype=np.int16)
+    # audio data to frames
+    input_data = get_audio_frames(voice)
+    # input audio data to get weights data
+    sound_animation.input_frames_data(input_data)
+    audio_animation = get_audio_animation()
+    # print(f"audio_animation: {audio_animation}")
+
+    audio_name = f"{uuid.uuid4().hex}.wav"
+    audio_path = join(UPLOAD_FOLDER_PATH, audio_name)
+
+    with open(audio_path, "wb") as af:
+        af.write(b_wav_data)
+    audio_url = f"{BASE_DOMAIN}/get_file/{audio_name}"
+
+    face_name = f"{uuid.uuid4().hex}.txt"
+    face_path = join(UPLOAD_FOLDER_PATH, face_name)
+    np.savetxt(face_path, audio_animation, fmt="%.19e", delimiter=",")
+    face_url = f"{BASE_DOMAIN}/get_file/{face_name}"
+
+    return {"audio_url": audio_url, "face_url": face_url}
+
+
+def get_audio_and_face(text: str):
+    """
+    根据文本从TTS获取语音，并根据语音获取面部数据
+
+    """
+    print("get audio and face")
+
+    tts_wav_data = aispeech.tts(text=text)
+    face_data = get_face_from_audio(tts_wav_data)
+    return face_data
 
 
 def create_video_message(text: str, background_name: str):
@@ -320,14 +378,14 @@ def create_video_message(text: str, background_name: str):
     根据用户上传的文本内容和背景图片生成对应的消息
 
     """
+
     print(f"create_video_message: {text}---{background_name}")
     answer_data = {}
 
-    audio_name = "39ca506ed50043a7a42db1a52b1c3c20.wav"
-    face_name = "dafc1e4e81334ce8862bdc6f4724c497.txt"
+    audio_and_face = get_audio_and_face(text)
 
-    audio_url = f"{BASE_DOMAIN}/get_file/{audio_name}"
-    face_url = f"{BASE_DOMAIN}/get_file/{face_name}"
+    audio_url = audio_and_face["audio_url"]
+    face_url = audio_and_face["face_url"]
     background_url = f"{BASE_DOMAIN}/background/{background_name}"
 
     answer_data["answer"] = {"input": "notification", "output": text}
@@ -351,7 +409,7 @@ def get_video_task_info(task_id: str):
     video_task_file_path = "./video_task.log"
     task_info = {}
 
-    with open(video_task_file_path, "r",encoding="utf-8") as tasks:
+    with open(video_task_file_path, "r", encoding="utf-8") as tasks:
         for task in tasks.readlines():
             task_line = task.split("|")
             if task_line and task_line[0] == task_id:
@@ -362,7 +420,7 @@ def get_video_task_info(task_id: str):
     return task_info
 
 
-def create_video_task(task_id: str):
+async def create_video_task(task_id: str):
     """
     创建生成视频任务
     """
@@ -371,7 +429,7 @@ def create_video_task(task_id: str):
     task_info = get_video_task_info(task_id)
     if task_info:
         message = create_video_message(task_info["text"], task_info["background_name"])
-        send_message_to_client(message)
+        await send_message_to_client(message)
 
 
 async def handler(websocket):
