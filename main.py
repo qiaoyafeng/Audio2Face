@@ -88,6 +88,7 @@ async def send_video_info(
     request: Request, info: str = Form(), file: UploadFile = File()
 ):
     print(f"enter send_video_info ...")
+    info = info.replace("\n", "").replace("|", "")
     result = {"info": info, "message": "send successfully!"}
     task_id = f"{uuid.uuid4().hex}"
     background_name = f"{uuid.uuid4().hex}.jpg"

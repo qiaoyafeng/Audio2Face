@@ -16,7 +16,7 @@
 	<form class="form-horizontal"  role="form" method="post" action="/send_video_info" enctype="multipart/form-data">
 		<div class="form-group">
 			<label for="info">输入语音文字</label>
-			<textarea id="info" name="info" class="form-control" rows="3" cols="100" minlength="5" maxlength="100" placeholder="输入要生成的语音内容" required></textarea>
+			<textarea id="info" name="info" class="form-control" rows="3" cols="100" minlength="1" maxlength="10000" placeholder="输入要生成的语音内容" required></textarea>
 		</div>
 		<div class="custom-file mb-3">
 		  <input type="file" class="custom-file-input" id="file" name="file"  accept="image/png, image/jpeg, image/gif, image/jpg" required>
