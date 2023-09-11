@@ -18,6 +18,7 @@ from ws_server import (
     SERVER_ADDR,
     main,
     update_video_task_info,
+    get_video_task_info,
 )
 from ws_server import answer_handler
 
@@ -92,7 +93,9 @@ def read_item(file_name: str):
         return join(TEMP_FOLDER_PATH, "test.txt")
 
 
-@app.post("/send_video_info", response_class=HTMLResponse)
+@app.post(
+    "/send_video_info",
+)
 async def send_video_info(
     request: Request, info: str = Form(), file: UploadFile = File()
 ):
@@ -116,7 +119,7 @@ async def send_video_info(
     # 上传完成文本和背景图后， 创建视频任务，
     await create_video_task(task_id)
     result["task_id"] = task_id
-    return RedirectResponse("/video/list", 302)
+    return result
 
 
 @app.get("/send_video_info", response_class=HTMLResponse)
@@ -189,7 +192,15 @@ def get_video(file_name: str):
 
 @app.get("/video/task/{task_id}")
 def get_video_task(task_id: str):
-    print(f"get_video_task: {task_id}")
+    result = {}
+    if task_id:
+        task_info = get_video_task_info(task_id)
+        if "is_created" in task_info and task_info["is_created"] != "0":
+            video_id = task_info["is_created"].replace("\n", "").replace("\r", "")
+            video_name = f"{video_id}.mp4"
+            video_url = f"{BASE_DOMAIN}/video/{video_name}"
+            result["video_url"] = video_url
+    return result
 
 
 @app.websocket("/")

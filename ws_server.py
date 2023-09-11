@@ -414,6 +414,7 @@ def get_video_task_info(task_id: str):
                 task_info["text"] = task_line[1]
                 task_info["background_name"] = task_line[2]
                 task_info["is_created"] = task_line[3]
+                return task_info
     return task_info
 
 
