@@ -9,9 +9,11 @@ import websockets
 from fastapi import FastAPI, File, UploadFile, Form, WebSocket, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from starlette.templating import Jinja2Templates
 
+from models import VideoTaskItem
 from ws_server import (
     create_video_task,
     handler,
@@ -23,6 +25,18 @@ from ws_server import (
 from ws_server import answer_handler
 
 app = FastAPI()
+
+origins = [
+    "*",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 # app.mount("/background", StaticFiles(directory="static/background"), name="background")
@@ -39,7 +53,7 @@ BASE_DOMAIN = "http://172.16.35.149:8000"
 templates = Jinja2Templates(directory="templates")
 
 
-class Item(BaseModel):
+class TestItem(BaseModel):
     name: str
     price: float
     is_offer: Union[bool, None] = None
@@ -61,7 +75,7 @@ def read_item(item_id: int, q: Union[str, None] = None):
 
 
 @app.put("/items/{item_id}", include_in_schema=False)
-def update_item(item_id: int, item: Item):
+def update_item(item_id: int, item: TestItem):
     return {"item_name": item.name, "item_price": item.price, "item_id": item_id}
 
 
@@ -96,24 +110,31 @@ def read_item(file_name: str):
 @app.post(
     "/send_video_info",
 )
-async def send_video_info(
-    request: Request, info: str = Form(), background_url: str = Form()
-):
-    print(f"enter send_video_info ...", info)
-    info = info.replace("\n", "").replace("\r", "").replace("|", "")
-    result = {"info": info, "message": "send successfully!"}
+async def send_video_info(item: VideoTaskItem):
+    print(f"enter send_video_info ...{item.info}")
+    info = item.info.replace("\n", "。").replace("\r", "").replace("|", "")
+    resp = {
+        "code": 2000,
+        "message": "操作成功！",
+        "errorMsg": "",
+    }
+    result = {
+        "info": info,
+    }
     task_id = f"{uuid.uuid4().hex}"
-
     video_task_file_path = "./video_task.log"
     is_created = 0
     with open(video_task_file_path, "a", encoding="utf-8") as log:
-        log_info = f"{task_id}|{info}|{background_url}|{is_created}\n"
+        log_info = f"{task_id}|{info}|{item.background_url}|{is_created}\n"
         log.write(log_info)
-
-    # 上传完成文本和背景图后， 创建视频任务，
-    await create_video_task(task_id)
+    try:
+        # 上传完成文本和背景图后， 创建视频任务，
+        await create_video_task(task_id)
+    except Exception as e:
+        print(f"except - create_video_task: {e}")
     result["task_id"] = task_id
-    return result
+    resp["result"] = result
+    return resp
 
 
 @app.get("/send_video_info", response_class=HTMLResponse)
@@ -173,6 +194,28 @@ def get_last_video(request: Request):
     )
 
 
+@app.get("/video/task")
+def get_video_task(task_id: str):
+    resp = {
+        "code": 2000,
+        "message": "操作成功！",
+        "errorMsg": "",
+    }
+    result = {}
+    print(f"get_video_task  task_id: {task_id}")
+    if task_id:
+        task_info = get_video_task_info(task_id)
+        print(f"task_info: {task_info}")
+        if "is_created" in task_info and task_info["is_created"] != "0":
+            video_id = task_info["is_created"]
+            video_name = f"{video_id}.mp4"
+            video_url = f"{BASE_DOMAIN}/video/{video_name}"
+            result["video_url"] = video_url
+    resp["result"] = result
+    print(f"get_video_task resp: {resp}")
+    return resp
+
+
 @app.get("/video/{file_name}")
 def get_video(file_name: str):
     print(f"enter get_video ...")
@@ -181,22 +224,7 @@ def get_video(file_name: str):
     if file_name in files:
         return FileResponse(os.path.join(VIDEO_FOLDER_PATH, file_name))
     else:
-        return {"message": "background file not found"}
-
-
-@app.get("/video/task/{task_id}")
-def get_video_task(task_id: str):
-    result = {}
-    print(f"get_video_task  task_id: {task_id}")
-    if task_id:
-        task_info = get_video_task_info(task_id)
-        print(f"task_info: {task_info}")
-        if "is_created" in task_info and task_info["is_created"] != "0\n":
-            video_id = task_info["is_created"].replace("\n", "").replace("\r", "")
-            video_name = f"{video_id}.mp4"
-            video_url = f"{BASE_DOMAIN}/video/{video_name}"
-            result["video_url"] = video_url
-    return result
+        return {"message": "video file not found"}
 
 
 @app.websocket("/")

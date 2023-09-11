@@ -409,7 +409,7 @@ def get_video_task_info(task_id: str):
 
     with open(video_task_file_path, "r", encoding="utf-8") as tasks:
         for task in tasks.readlines():
-            task_line = task.split("|")
+            task_line = task.replace("\n", "").split("|")
             if task_line and task_line[0] == task_id:
                 task_info["task_id"] = task_id
                 task_info["text"] = task_line[1]
