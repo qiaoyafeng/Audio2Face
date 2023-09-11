@@ -373,7 +373,7 @@ def get_audio_and_face(text: str):
     return face_data
 
 
-def create_video_message(text: str, background_name: str):
+def create_video_message(text: str, background_name: str, task_id: str = ""):
     """
     根据用户上传的文本内容和背景图片生成对应的消息
 
@@ -393,6 +393,7 @@ def create_video_message(text: str, background_name: str):
     answer_data["face"] = {"url": face_url}
     answer_data["motion"] = {"url": ""}
     answer_data["background"] = {"url": background_url}
+    answer_data["task_id"] = task_id
     message = {"code": 0, "msg": "ok", "data": answer_data}
 
     message = json.dumps(message)
@@ -428,7 +429,7 @@ async def create_video_task(task_id: str):
 
     task_info = get_video_task_info(task_id)
     if task_info:
-        message = create_video_message(task_info["text"], task_info["background_name"])
+        message = create_video_message(task_info["text"], task_info["background_name"], task_info["task_id"])
         await send_message_to_client(message)
 
 
