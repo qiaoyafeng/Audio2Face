@@ -97,23 +97,17 @@ def read_item(file_name: str):
     "/send_video_info",
 )
 async def send_video_info(
-    request: Request, info: str = Form(), file: UploadFile = File()
+    request: Request, info: str = Form(), background_url: str = Form()
 ):
     print(f"enter send_video_info ...", info)
     info = info.replace("\n", "").replace("\r", "").replace("|", "")
     result = {"info": info, "message": "send successfully!"}
     task_id = f"{uuid.uuid4().hex}"
-    background_name = f"{uuid.uuid4().hex}.jpg"
-    background_name_path = join(BACKGROUND_FOLDER_PATH, background_name)
-    contents = await file.read()
-
-    with open(background_name_path, "wb") as af:
-        af.write(contents)
 
     video_task_file_path = "./video_task.log"
     is_created = 0
     with open(video_task_file_path, "a", encoding="utf-8") as log:
-        log_info = f"{task_id}|{info}|{background_name}|{is_created}\n"
+        log_info = f"{task_id}|{info}|{background_url}|{is_created}\n"
         log.write(log_info)
 
     # 上传完成文本和背景图后， 创建视频任务，
@@ -193,9 +187,11 @@ def get_video(file_name: str):
 @app.get("/video/task/{task_id}")
 def get_video_task(task_id: str):
     result = {}
+    print(f"get_video_task  task_id: {task_id}")
     if task_id:
         task_info = get_video_task_info(task_id)
-        if "is_created" in task_info and task_info["is_created"] != "0":
+        print(f"task_info: {task_info}")
+        if "is_created" in task_info and task_info["is_created"] != "0\n":
             video_id = task_info["is_created"].replace("\n", "").replace("\r", "")
             video_name = f"{video_id}.mp4"
             video_url = f"{BASE_DOMAIN}/video/{video_name}"

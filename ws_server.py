@@ -369,20 +369,21 @@ def get_audio_and_face(text: str):
     return face_data
 
 
-def create_video_message(text: str, background_name: str, task_id: str = ""):
+def create_video_message(text: str, background_url: str, task_id: str = ""):
     """
     根据用户上传的文本内容和背景图片生成对应的消息
 
     """
 
-    print(f"create_video_message: {text}---{background_name}")
+    print(f"create_video_message: {text}---{background_url}")
     answer_data = {}
 
     audio_and_face = get_audio_and_face(text)
 
     audio_url = audio_and_face["audio_url"]
     face_url = audio_and_face["face_url"]
-    background_url = f"{BASE_DOMAIN}/background/{background_name}"
+    if not background_url.startswith("http"):
+        background_url = f"{BASE_DOMAIN}/background/{background_url}"
 
     answer_data["answer"] = {"input": "notification", "output": text}
     answer_data["tts"] = {"audio_url": audio_url}
@@ -412,7 +413,7 @@ def get_video_task_info(task_id: str):
             if task_line and task_line[0] == task_id:
                 task_info["task_id"] = task_id
                 task_info["text"] = task_line[1]
-                task_info["background_name"] = task_line[2]
+                task_info["background_url"] = task_line[2]
                 task_info["is_created"] = task_line[3]
                 return task_info
     return task_info
@@ -427,7 +428,7 @@ async def create_video_task(task_id: str):
     task_info = get_video_task_info(task_id)
     if task_info:
         message = create_video_message(
-            task_info["text"], task_info["background_name"], task_info["task_id"]
+            task_info["text"], task_info["background_url"], task_info["task_id"]
         )
         await send_message_to_client(message)
 
