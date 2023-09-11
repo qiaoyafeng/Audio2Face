@@ -12,7 +12,13 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 from starlette.templating import Jinja2Templates
 
-from ws_server import create_video_task, handler, SERVER_ADDR, main
+from ws_server import (
+    create_video_task,
+    handler,
+    SERVER_ADDR,
+    main,
+    update_video_task_info,
+)
 from ws_server import answer_handler
 
 app = FastAPI()
@@ -64,12 +70,15 @@ async def create_file(file: bytes = File()):
 
 
 @app.post("/uploadfile")
-async def create_upload_file(file: bytes = File(), file_type: int = 1):
-    if file_type:
-        video_name = f"{uuid.uuid4().hex}.mp4"
+async def create_upload_file(file: bytes = File(), task_id: str = Form()):
+    print(f"create_upload_file: {task_id}")
+    video_id = uuid.uuid4().hex
+    if task_id:
+        video_name = f"{video_id}.mp4"
         video_name_path = join(VIDEO_FOLDER_PATH, video_name)
         with open(video_name_path, "wb") as af:
             af.write(file)
+        update_video_task_info(task_id, video_id)
 
     return {"message": "upload successfully!"}
 
