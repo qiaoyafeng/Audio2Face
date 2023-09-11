@@ -326,7 +326,7 @@ async def send_message_to_client(message):
     """
     print(f"send  {message} to {CONNECTIONS}")
     if CONNECTIONS:
-        await list(CONNECTIONS)[0].send_text(message)
+        await list(CONNECTIONS)[-1].send_text(message)
 
 
 def get_face_from_audio(b_wav_data):
