@@ -59,11 +59,6 @@ class TestItem(BaseModel):
     is_offer: Union[bool, None] = None
 
 
-@app.get("/")
-def hello():
-    return {"info": "好心情，有你才有好心情"}
-
-
 @app.post("/login/")
 async def login(username: str = Form(), password: str = Form()):
     return {"username": username}
@@ -137,7 +132,7 @@ async def send_video_info(item: VideoTaskItem):
     return resp
 
 
-@app.get("/send_video_info", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def send_video_info(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
