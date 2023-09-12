@@ -6,22 +6,35 @@ from typing import Union
 from os.path import abspath, dirname, join
 import uvicorn
 import websockets
-from fastapi import FastAPI, File, UploadFile, Form, WebSocket, Request
+from fastapi import (
+    FastAPI,
+    File,
+    UploadFile,
+    Form,
+    WebSocket,
+    Request,
+    Depends,
+    HTTPException,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from starlette.templating import Jinja2Templates
 
-from models import VideoTaskItem
+import crud, models, schemas
+from database import SessionLocal, engine
+from utils import replace_special_character
+
+models.Base.metadata.create_all(bind=engine)
+
 from ws_server import (
-    create_video_task,
-    handler,
-    SERVER_ADDR,
-    main,
-    update_video_task_info,
     get_video_task_info,
+    create_video_message,
+    send_message_to_client,
 )
+
 from ws_server import answer_handler
 
 app = FastAPI()
@@ -44,13 +57,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 root_path = "./"
 
 BACKGROUND_FOLDER_PATH = join(root_path, "static/background")
-VIDEO_FOLDER_PATH = join(root_path, "static/video")
+VIDEO_FOLDER_PATH = join(root_path, "temp/videos")
 
 TEMP_FOLDER_PATH = join(root_path, "temp")
 
 BASE_DOMAIN = "http://172.16.35.149:8000"
 
 templates = Jinja2Templates(directory="templates")
+
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 class TestItem(BaseModel):
@@ -80,16 +102,22 @@ async def create_file(file: bytes = File()):
 
 
 @app.post("/uploadfile")
-async def create_upload_file(file: bytes = File(), task_id: str = Form()):
+async def create_upload_file(
+    file: bytes = File(), task_id: str = Form(), db: Session = Depends(get_db)
+):
     print(f"create_upload_file: {task_id}")
     video_id = uuid.uuid4().hex
     if task_id:
         video_name = f"{video_id}.mp4"
         video_name_path = join(VIDEO_FOLDER_PATH, video_name)
+        video_url = f"/video/{video_name}"
         with open(video_name_path, "wb") as af:
             af.write(file)
-        update_video_task_info(task_id, video_id)
+        update_task_schema = schemas.VideoTaskUpdateRequest(
+            uuid=task_id, video_url=video_url
+        )
 
+        crud.update_video_task(db, update_task_schema)
     return {"message": "upload successfully!"}
 
 
@@ -105,9 +133,11 @@ def read_item(file_name: str):
 @app.post(
     "/send_video_info",
 )
-async def send_video_info(item: VideoTaskItem):
+async def send_video_info(
+    item: schemas.VideoTaskCreateRequest, db: Session = Depends(get_db)
+):
     print(f"enter send_video_info ...{item.info}")
-    info = item.info.replace("\n", "。").replace("\r", "").replace("|", "")
+    info = replace_special_character(item.info)
     resp = {
         "code": 2000,
         "message": "操作成功！",
@@ -116,17 +146,16 @@ async def send_video_info(item: VideoTaskItem):
     result = {
         "info": info,
     }
-    task_id = f"{uuid.uuid4().hex}"
-    video_task_file_path = "./video_task.log"
-    is_created = 0
-    with open(video_task_file_path, "a", encoding="utf-8") as log:
-        log_info = f"{task_id}|{info}|{item.background_url}|{is_created}\n"
-        log.write(log_info)
+    video_task = crud.create_video_task(db, item)
+    task_id = video_task.uuid
+    info = video_task.info
+    background_url = video_task.background_url
     try:
-        # 上传完成文本和背景图后， 创建视频任务，
-        await create_video_task(task_id)
+        # 上传完成文本和背景图后， 发送message给Websocket client
+        message = create_video_message(info, background_url, task_id)
+        await send_message_to_client(message)
     except Exception as e:
-        print(f"except - create_video_task: {e}")
+        print(f"except - create_video_message,send_message_to_client: {e}")
     result["task_id"] = task_id
     resp["result"] = result
     return resp
@@ -190,7 +219,7 @@ def get_last_video(request: Request):
 
 
 @app.get("/video/task")
-def get_video_task(task_id: str):
+def get_video_task(task_id: str, db: Session = Depends(get_db)):
     resp = {
         "code": 2000,
         "message": "操作成功！",
@@ -199,12 +228,10 @@ def get_video_task(task_id: str):
     result = {}
     print(f"get_video_task  task_id: {task_id}")
     if task_id:
-        task_info = get_video_task_info(task_id)
-        print(f"task_info: {task_info}")
-        if "is_created" in task_info and task_info["is_created"] != "0":
-            video_id = task_info["is_created"]
-            video_name = f"{video_id}.mp4"
-            video_url = f"{BASE_DOMAIN}/video/{video_name}"
+        task = crud.get_video_task(db, task_id)
+        print(f"task: {task}")
+        if task and task.video_url:
+            video_url = f"{BASE_DOMAIN}{task.video_url}"
             result["video_url"] = video_url
     resp["result"] = result
     print(f"get_video_task resp: {resp}")
@@ -220,6 +247,13 @@ def get_video(file_name: str):
         return FileResponse(os.path.join(VIDEO_FOLDER_PATH, file_name))
     else:
         return {"message": "video file not found"}
+
+
+@app.post("/create_video_task/", response_model=schemas.VideoTaskCreateResponse)
+def create_video_task_api(
+    task: schemas.VideoTaskCreateRequest, db: Session = Depends(get_db)
+):
+    return crud.create_video_task(db=db, task=task)
 
 
 @app.websocket("/")

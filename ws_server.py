@@ -433,30 +433,6 @@ async def create_video_task(task_id: str):
         await send_message_to_client(message)
 
 
-def update_video_task_info(task_id: str, video_id: str):
-    """
-    更新视频任务信息
-    """
-
-    print(f"update_video_task_info:{task_id}")
-
-    if not (task_id or video_id):
-        return
-
-    video_task_file_path = "./video_task.log"
-
-    with open(video_task_file_path, "r+", encoding="utf-8") as task_file:
-        tasks = task_file.readlines()
-        for i, task in enumerate(tasks):
-            task_line = task.split("|")
-            if task_line and task_line[0] == task_id:
-                # 修改创建视频任务对应行
-                tasks[i] = f"{task_id}|{task_line[1]}|{task_line[2]}|{video_id}\n"
-                task_file.seek(0)
-                task_file.writelines(tasks)
-                break
-
-
 async def handler(websocket):
     CONNECTIONS.add(websocket)
     print(f"CONNECTIONS ADD: {websocket}")
