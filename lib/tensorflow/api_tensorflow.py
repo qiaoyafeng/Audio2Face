@@ -1,12 +1,17 @@
 # encoding=utf-8
 import os
+import platform
+
 import numpy as np
 import scipy.io.wavfile as wavfile
 # from audiolazy.lazy_lpc import lpc
 from ctypes import *
 # import time
 
-dll = cdll.LoadLibrary(r'./LPC.dll')
+dynamic_file = "LPC.dll"
+if platform.system() == "Linux":
+    dynamic_file = "libLPC.so"
+dll = cdll.LoadLibrary(r'./{dynamic_file}')
 wav_path = r'./wav/1015_3_16.wav' #音频路径
 save_path = r'./lpc/1015_3_16.npy' #保存LPC处理后的数组
 wav_path = "./5.wav"

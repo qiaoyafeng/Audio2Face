@@ -9,6 +9,8 @@ import json
 import asyncio
 import websockets
 
+from config.aispeech import AiSpeechConfig
+from config.base import BASE_DOMAIN, UPLOAD_FOLDER_PATH
 from constants import (
     BS_CONUNT,
     var_bs_index,
@@ -20,23 +22,12 @@ from constants import (
 from fastapi import FastAPI, File, UploadFile, Form, WebSocket
 
 
-package_path = "./"
-
-UPLOAD_FOLDER_PATH = join(package_path, "temp/")
-
-BASE_DOMAIN = "http://172.16.35.149:8000"
-
 # *******************************************
 # load config file
-path_config = join(package_path, "config.json")
 
-try:
-    with codecs.open(path_config, "r", "utf-8-sig") as fconfig:
-        ServiceConfig = json.load(fconfig)
-except Exception as err:
-    print("Read file failed,", path_config, ".Error is :", err)
-    os.system("pause")
-    # exit(1)
+aispeech_config = AiSpeechConfig()
+
+ServiceConfig = aispeech_config.config_dict()
 
 # *******************************************
 # read parsing config data

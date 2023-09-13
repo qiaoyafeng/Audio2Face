@@ -24,6 +24,12 @@ from sqlalchemy.orm import Session
 from starlette.templating import Jinja2Templates
 
 import crud, models, schemas
+from config.base import (
+    VIDEO_FOLDER_PATH,
+    TEMP_FOLDER_PATH,
+    BACKGROUND_FOLDER_PATH,
+    BASE_DOMAIN,
+)
 from database import SessionLocal, engine
 from utils import replace_special_character
 
@@ -54,14 +60,6 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 # app.mount("/background", StaticFiles(directory="static/background"), name="background")
 
-root_path = "./"
-
-BACKGROUND_FOLDER_PATH = join(root_path, "static/background")
-VIDEO_FOLDER_PATH = join(root_path, "temp/videos")
-
-TEMP_FOLDER_PATH = join(root_path, "temp")
-
-BASE_DOMAIN = "http://172.16.35.149:8000"
 
 templates = Jinja2Templates(directory="templates")
 

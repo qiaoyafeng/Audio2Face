@@ -6,13 +6,18 @@
 
 """
 import os
+import platform
 from ctypes import *
 import numpy as np
 
 '''
     load LPC.dll dynamically
 '''
-dll_path_win = "./lib/tensorflow/LPC.dll"
+dynamic_file = "LPC.dll"
+if platform.system() == "Linux":
+    dynamic_file = "libLPC.so"
+
+dll_path_win = f"./lib/tensorflow/{dynamic_file}"
 dll_path_linux = dll_path_win.replace('\\', '/')
 dll = cdll.LoadLibrary(dll_path_linux)
 LPC = dll.LPC
