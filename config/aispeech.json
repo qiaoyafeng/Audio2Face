@@ -16,7 +16,7 @@
         "publicKey":"c315edc2bab941cbae6a3591a06281bc",
         "secretKey":"81D620703D63A63A200AEB94125FBAFB",
         "productIdChat":"914008349",
-        "speaker":"xijunma"
+        "speaker":"zsmeif"
     },
     "api_token":{
         "description":"调用API时的Token，用来验证请求的合法性",

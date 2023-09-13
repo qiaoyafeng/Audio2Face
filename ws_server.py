@@ -234,8 +234,8 @@ def get_audio_animation():
 
 def get_answer_data(recv_dict):
     answer_data = {}
-    audio_name = "test.wav"
-    face_name = "test.txt"
+    audio_name = "tests.wav"
+    face_name = "tests.txt"
     audio_url = f"{BASE_DOMAIN}/get_file/{audio_name}"
     face_url = f"{BASE_DOMAIN}/get_file/{face_name}"
     text = recv_dict["text"]["content"]

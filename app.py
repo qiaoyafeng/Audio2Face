@@ -18,4 +18,4 @@ def get_file(file_name):
     if file_path:
         return send_from_directory(app.config["TEMP_FOLDER"], file_name)
     else:
-        return send_from_directory(app.config["TEMP_FOLDER"], "test.txt")
+        return send_from_directory(app.config["TEMP_FOLDER"], "tests.txt")

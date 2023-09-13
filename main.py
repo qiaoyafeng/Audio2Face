@@ -125,7 +125,7 @@ def read_item(file_name: str):
     if file_path:
         return FileResponse(os.path.join(TEMP_FOLDER_PATH, file_name))
     else:
-        return join(TEMP_FOLDER_PATH, "test.txt")
+        return join(TEMP_FOLDER_PATH, "tests.txt")
 
 
 @app.post(
