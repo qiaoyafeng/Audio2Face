@@ -2,11 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-DB_IP = "127.0.0.1"
-DB_PORT = "3306"
-DB_NAME = "audio2face"
-DB_USERNAME = "root"
-DB_PASSWORD = "123456"
+from config.base import DB_USERNAME, DB_PASSWORD, DB_IP, DB_PORT, DB_NAME
 
 SQLALCHEMY_DATABASE_URL = (
     f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_IP}:{DB_PORT}/{DB_NAME}"
