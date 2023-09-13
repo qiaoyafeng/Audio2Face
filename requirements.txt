@@ -1,9 +1,12 @@
 absl-py==1.4.0
 aiofiles==23.2.1
+aiohttp==3.8.5
+aiosignal==1.3.1
 altair==5.1.1
 annotated-types==0.5.0
 anyio==3.7.1
 astunparse==1.6.3
+async-timeout==4.0.3
 attrs==23.1.0
 blinker==1.6.2
 cachetools==5.3.1
@@ -13,7 +16,9 @@ charset-normalizer==3.2.0
 click==8.1.7
 colorama==0.4.6
 contourpy==1.1.0
+cryptography==41.0.3
 cycler==0.11.0
+edge-tts==6.1.8
 exceptiongroup==1.1.3
 fastapi==0.103.1
 ffmpy==0.3.1
@@ -22,6 +27,7 @@ Flask==2.3.3
 Flask-Cors==4.0.0
 flatbuffers==23.5.26
 fonttools==4.42.1
+frozenlist==1.4.0
 fsspec==2023.9.0
 gast==0.4.0
 gevent==23.7.0
@@ -40,6 +46,7 @@ huggingface-hub==0.16.4
 idna==3.4
 importlib-metadata==6.8.0
 importlib-resources==6.0.1
+iniconfig==2.0.0
 itsdangerous==2.1.2
 Jinja2==3.1.2
 jsonschema==4.19.0
@@ -53,6 +60,7 @@ matplotlib==3.7.2
 mkl-fft==1.3.6
 mkl-random @ file:///C:/Users/dev-admin/mkl/mkl_random_1682977971003/work
 mkl-service==2.4.0
+multidict==6.0.4
 numpy==1.24.3
 oauthlib==3.2.2
 opt-einsum==3.3.0
@@ -60,15 +68,20 @@ orjson==3.9.5
 packaging==23.1
 pandas==2.1.0
 Pillow==10.0.0
+pluggy==1.3.0
 protobuf==4.24.2
 pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycparser==2.21
 pydantic==2.3.0
+pydantic-settings==2.0.3
 pydantic_core==2.6.3
 pydub==0.25.1
+PyMySQL==1.1.0
 pyparsing==3.0.9
+pytest==7.4.2
 python-dateutil==2.8.2
+python-dotenv==1.0.0
 python-multipart==0.0.6
 pytz==2023.3.post1
 PyYAML==6.0.1
@@ -81,6 +94,7 @@ scipy==1.11.1
 semantic-version==2.10.0
 six==1.16.0
 sniffio==1.3.0
+SQLAlchemy==2.0.20
 starlette==0.27.0
 tensorboard==2.13.0
 tensorboard-data-server==0.7.1
@@ -89,6 +103,7 @@ tensorflow-estimator==2.13.0
 tensorflow-intel==2.13.0
 tensorflow-io-gcs-filesystem==0.31.0
 termcolor==2.3.0
+tomli==2.0.1
 toolz==0.12.0
 tqdm==4.66.1
 typing_extensions==4.7.1
@@ -99,6 +114,7 @@ websocket-client==1.6.2
 websockets==11.0.3
 Werkzeug==2.3.7
 wrapt==1.15.0
+yarl==1.9.2
 zipp==3.16.2
 zope.event==5.0
 zope.interface==6.0
